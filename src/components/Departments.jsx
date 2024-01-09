@@ -13,7 +13,7 @@ function AdminHome() {
         fetchData();
     }, []);
 
-    const fetchData = async () => {
+        const fetchData = async () => {
         try {
             await axios.get("http://localhost:3001/admin/departments").then((data) => setData(data.data));
 
@@ -27,7 +27,7 @@ function AdminHome() {
         } catch (error) {
             console.error(error);
         }
-    };
+    };              
 
     const deleteData = async (id) => {
         try {
@@ -105,9 +105,7 @@ function AdminHome() {
                                             <button
                                                 type="button"
                                                 className="btn btn-primary"
-                                                onClick={() => {
-                                                    navigate(`/editDepartment/${item.id}`);
-                                                }}
+                                                onClick={() => navigate(`/editDepartment/${item._id}`)}
                                             >
                                                 Edit
                                             </button>

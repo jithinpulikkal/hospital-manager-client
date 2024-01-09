@@ -1,20 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 
-function AddUser() {
+function EditUser() {
+    const { id } = useParams();
     const navigate = useNavigate();
-    const [user, setuser] = useState({
+
+    const [user, setUser] = useState({
         employeeName: "",
+        age: 0,
         employeeNumber: "",
         profileImg: "",
-        age: 0,
         description: "",
+        department: "",
     });
 
     const [imageFile, setImageFile] = useState(null);
-    const [departments, setDepartments] = useState([]);
+    const [errors, setErrors] = useState({});
+
     const [selectedDepartment, setSelectedDepartment] = useState("");
+    const [departments, setDepartments] = useState([]);
 
     useEffect(() => {
         const fetchDepartments = async () => {
@@ -29,20 +34,80 @@ function AddUser() {
         fetchDepartments();
     }, []);
 
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                const response = await axios.get(`http://localhost:3001/admin/editUser/${id}`);
+
+                const userData = response.data;
+                setUser(userData);
+
+            } catch (error) {
+                console.error("Error fetching user data:", error);
+            }
+        };
+
+        fetchUserData();
+    }, [id]);
+
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         setImageFile(file);
     };
 
-    const adduser = async (e) => {
+    const validateForm = () => {
+        let isValid = true;
+        const newErrors = {};
+
+        if (!user.employeeName.trim()) {
+            newErrors.employeeName = "Username is required";
+            isValid = false;
+        }
+
+        if (!user.age) {
+            newErrors.age = "Age is required";
+            isValid = false;
+        } else if (isNaN(user.age)) {
+            newErrors.age = "Age should be a valid number";
+            isValid = false;
+        }
+
+        if (!user.employeeNumber) {
+            newErrors.employeeNumber = "employeeNumber is required";
+            isValid = false;
+        } else if (isNaN(user.employeeNumber)) {
+            newErrors.employeeNumber = "employeeNumber should be a valid number";
+            isValid = false;
+        }
+
+        if (!imageFile) {
+            newErrors.profileImg = "Profile Image is required";
+            isValid = false;
+        }
+
+        if (!user.description.trim()) {
+            newErrors.description = "Description is required";
+            isValid = false;
+        }
+
+        if (!user.department) {
+            newErrors.department = "Department is required";
+            isValid = false;
+        }
+
+        setErrors(newErrors);
+        return isValid;
+    };
+
+    const editUser = async (e) => {
         e.preventDefault();
 
-        if (!imageFile || !selectedDepartment) {
-            console.error("Please select an image and department");
+        if (!validateForm()) {
             return;
         }
 
         const formData = new FormData();
+
         formData.append("employeeName", user.employeeName);
         formData.append("age", user.age);
         formData.append("employeeNumber", user.employeeNumber);
@@ -51,38 +116,24 @@ function AddUser() {
         formData.append("department", selectedDepartment);
 
         try {
-            const { data } = await axios.post(
-                "http://localhost:3001/admin/addUser",
-                formData,
-                {
-                    withCredentials: true,
-                    headers: {
-                        "Content-Type": "multipart/form-data",
-                    },
-                }
-            );
-
-            console.log("Response:", data);
-
-            if (data.add) {
-                navigate("/employees");
-            }
+            await axios.put(`http://localhost:3001/admin/editUser/${id}`, formData, {
+                withCredentials: true,
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+            console.log(formData.data);
+            navigate("/employees");
         } catch (error) {
-            if (error.response) {
-                console.error("Server error:", error.response.data);
-            } else if (error.request) {
-                console.error("No response from the server");
-            } else {
-                console.error("Error:", error.message);
-            }
+            console.error("Error updating user:", error);
         }
     };
 
     return (
         <div className="container d-flex justify-content-center align-items-center" style={{ height: "100vh" }}>
-            <form className=" p-4 rounded" style={{ maxWidth: "500px" }}>
+            <form className="p-4 rounded" style={{ maxWidth: "500px" }}>
                 <div className="text-center mb-4">
-                    <h3>ADD USER</h3>
+                    <h3>EDIT USER</h3>
                 </div>
 
                 <div className="mb-3">
@@ -92,13 +143,12 @@ function AddUser() {
                     <input
                         type="text"
                         id="employeeName"
-                        className="form-control"
+                        className={`form-control ${errors.employeeName ? "is-invalid" : ""}`}
                         name="employeeName"
-                        onChange={(e) => {
-                            e.persist();
-                            setuser((prevuser) => ({ ...prevuser, [e.target.name]: e.target.value }));
-                        }}
+                        value={user.employeeName}
+                        onChange={(e) => setUser((prevUser) => ({ ...prevUser, [e.target.name]: e.target.value }))}
                     />
+                    {errors.employeeName && <div className="invalid-feedback">{errors.employeeName}</div>}
                 </div>
 
                 <div className="mb-3">
@@ -108,13 +158,12 @@ function AddUser() {
                     <input
                         type="number"
                         id="age"
-                        className="form-control"
+                        className={`form-control ${errors.age ? "is-invalid" : ""}`}
                         name="age"
-                        onChange={(e) => {
-                            e.persist();
-                            setuser((prevuser) => ({ ...prevuser, [e.target.name]: e.target.value }));
-                        }}
+                        value={user.age}
+                        onChange={(e) => setUser((prevUser) => ({ ...prevUser, [e.target.name]: e.target.value }))}
                     />
+                    {errors.age && <div className="invalid-feedback">{errors.age}</div>}
                 </div>
 
                 <div className="mb-3">
@@ -124,13 +173,12 @@ function AddUser() {
                     <input
                         type="number"
                         id="employeeNumber"
-                        className="form-control"
+                        className={`form-control ${errors.employeeNumber ? "is-invalid" : ""}`}
                         name="employeeNumber"
-                        onChange={(e) => {
-                            e.persist();
-                            setuser((prevuser) => ({ ...prevuser, [e.target.name]: e.target.value }));
-                        }}
+                        value={user.employeeNumber}
+                        onChange={(e) => setUser((prevUser) => ({ ...prevUser, [e.target.name]: e.target.value }))}
                     />
+                    {errors.employeeNumber && <div className="invalid-feedback">{errors.employeeNumber}</div>}
                 </div>
 
                 <div className="mb-3">
@@ -142,10 +190,10 @@ function AddUser() {
                         id="profileImg"
                         name="profileImg"
                         accept="image/*"
-                        className="form-control"
+                        className={`form-control ${errors.profileImg ? "is-invalid" : ""}`}
                         onChange={(e) => handleImageUpload(e)}
-                        required
                     />
+                    {errors.profileImg && <div className="invalid-feedback">{errors.profileImg}</div>}
                 </div>
 
                 <div className="mb-3">
@@ -155,7 +203,7 @@ function AddUser() {
                     <select
                         id="department"
                         name="department"
-                        className="form-control"
+                        className={`form-control ${errors.department ? "is-invalid" : ""}`}
                         value={selectedDepartment}
                         onChange={(e) => setSelectedDepartment(e.target.value)}
                     >
@@ -168,6 +216,7 @@ function AddUser() {
                             </option>
                         ))}
                     </select>
+                    {errors.department && <div className="invalid-feedback">{errors.department}</div>}
                 </div>
 
                 <div className="mb-3">
@@ -177,19 +226,18 @@ function AddUser() {
                     <textarea
                         type="text"
                         id="description"
-                        className="form-control"
+                        className={`form-control ${errors.description ? "is-invalid" : ""}`}
                         name="description"
                         placeholder="Enter a description"
-                        onChange={(e) => {
-                            e.persist();
-                            setuser((prevuser) => ({ ...prevuser, [e.target.name]: e.target.value }));
-                        }}
+                        value={user.description}
+                        onChange={(e) => setUser((prevUser) => ({ ...prevUser, [e.target.name]: e.target.value }))}
                     />
+                    {errors.description && <div className="invalid-feedback">{errors.description}</div>}
                 </div>
 
                 <div className="text-center">
-                    <button type="button" className="btn btn-primary btn-block" onClick={adduser}>
-                        Add user
+                    <button type="submit" className="btn btn-primary btn-block" onClick={editUser}>
+                        Update user
                     </button>
                 </div>
             </form>
@@ -197,4 +245,4 @@ function AddUser() {
     );
 }
 
-export default AddUser;
+export default EditUser;

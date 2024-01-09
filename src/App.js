@@ -7,12 +7,11 @@ import AdminLogin from "./pages/AdminLogin";
 
 import Departments from "./pages/Departments";
 import AddDepartments from "./pages/AddDepartments";
+import EditDepartment from "./pages/EditDepartments";
 
 import Employees from "./pages/Employees";
 import Addusers from "./pages/AddUser";
-
-import EditDepartments from "./components/EditDepartments";
-import EditUser from "./components/EditUser";
+import EditUser from "./pages/EditUser";
 
 
 
@@ -31,12 +30,12 @@ function App() {
 
             <Route exact path="/departments" Component={Departments} />
             <Route exact path="/addDepartments" Component={AddDepartments} />
-            <Route exact path="/editDepartment/:id" element={<EditDepartments />} />
+            <Route exact path="/editDepartment/:id" Component={EditDepartment} />
 
 
             <Route exact path="/employees" Component={Employees} />
             <Route exact path="/addUsers" Component={Addusers} />
-            <Route exact path="/editUser/:id" element={<EditUser />} />
+            <Route exact path="/editUser/:id" Component={EditUser} />
 
           </Routes>
         </Router>

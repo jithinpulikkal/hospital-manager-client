@@ -1,9 +1,11 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 function EditDepartment() {
+    const { id } = useParams();
     const navigate = useNavigate();
+
     const [department, setDepartment] = useState({
         deptName: "",
         yearFounded: "",
@@ -12,51 +14,86 @@ function EditDepartment() {
     });
 
     const [imageFile, setImageFile] = useState(null);
+    const [errors, setErrors] = useState({});
+
+    useEffect(() => {
+        const fetchDepartmentData = async () => {
+            try {
+                const response = await axios.get(`http://localhost:3001/admin/editDept/${id}`);
+
+                const departmentData = response.data;
+                setDepartment(departmentData);
+                
+            } catch (error) {
+                console.error("Error fetching department data:", error);
+            }
+        };
+
+        fetchDepartmentData();
+    }, [id]);
 
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         setImageFile(file);
     };
 
-    const adddepartment = async (e) => {
-        e.preventDefault();
+    const validateForm = () => {
+        let isValid = true;
+        const newErrors = {};
+
+        if (!department.deptName.trim()) {
+            newErrors.deptName = "Department Name is required";
+            isValid = false;
+        }
+
+        if (!department.yearFounded) {
+            newErrors.yearFounded = "Year Founded is required";
+            isValid = false;
+        } else if (isNaN(department.yearFounded) || department.yearFounded.length !== 4) {
+            newErrors.yearFounded = "Year Founded should be a valid 4-digit number";
+            isValid = false;
+        }
 
         if (!imageFile) {
-            console.error("Please select an image");
+            newErrors.deptImg = "Department Image is required";
+            isValid = false;
+        }
+
+        if (!department.description.trim()) {
+            newErrors.description = "Description is required";
+            isValid = false;
+        }
+
+        setErrors(newErrors);
+        return isValid;
+    };
+
+    const editDept = async (e) => {
+        e.preventDefault();
+
+        if (!validateForm()) {
             return;
         }
 
         const formData = new FormData();
+
         formData.append("deptName", department.deptName);
         formData.append("yearFounded", department.yearFounded);
         formData.append("description", department.description);
         formData.append("deptImg", imageFile);
 
         try {
-            const { data } = await axios.post(
-                "http://localhost:3001/admin/addDept",
-                formData,
-                {
-                    withCredentials: true,
-                    headers: {
-                        "Content-Type": "multipart/form-data",
-                    },
-                }
-            );
+            await axios.put(`http://localhost:3001/admin/editDept/${id}`, formData, {
+                withCredentials: true,
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+            console.log(formData.data);
+            navigate("/departments");
 
-            console.log("Response:", data);
-
-            if (data.add) {
-                navigate("/departments");
-            }
         } catch (error) {
-            if (error.response) {
-                console.error("Server error:", error.response.data);
-            } else if (error.request) {
-                console.error("No response from the server");
-            } else {
-                console.error("Error:", error.message);
-            }
+            console.error("Error editing department:", error);
         }
     };
 
@@ -64,7 +101,7 @@ function EditDepartment() {
         <div className="container d-flex justify-content-center align-items-center" style={{ height: "100vh" }}>
             <form className=" p-4 rounded" style={{ maxWidth: "500px" }}>
                 <div className="text-center mb-4">
-                    <h3>ADD DEPARTMENT</h3>
+                    <h3>EDIT DEPARTMENT</h3>
                 </div>
 
                 <div className="mb-3">
@@ -74,13 +111,14 @@ function EditDepartment() {
                     <input
                         type="text"
                         id="deptName"
-                        className="form-control"
+                        className={`form-control ${errors.deptName ? "is-invalid" : ""}`}
                         name="deptName"
-                        onChange={(e) => {
-                            e.persist();
-                            setDepartment((prevDepartment) => ({ ...prevDepartment, [e.target.name]: e.target.value }));
-                        }}
+                        value={department.deptName}
+                        onChange={(e) =>
+                            setDepartment((prevDept) => ({ ...prevDept, [e.target.name]: e.target.value }))
+                        }
                     />
+                    {errors.deptName && <div className="invalid-feedback">{errors.deptName}</div>}
                 </div>
 
                 <div className="mb-3">
@@ -88,16 +126,17 @@ function EditDepartment() {
                         Year Founded
                     </label>
                     <input
-                        type="number"
+                        type="text"
                         id="yearFounded"
-                        className="form-control"
+                        className={`form-control ${errors.yearFounded ? "is-invalid" : ""}`}
                         name="yearFounded"
-                        maxLength={"4"}
-                        onChange={(e) => {
-                            e.persist();
-                            setDepartment((prevDepartment) => ({ ...prevDepartment, [e.target.name]: e.target.value }));
-                        }}
+                        maxLength={4}
+                        value={department.yearFounded}
+                        onChange={(e) =>
+                            setDepartment((prevDept) => ({ ...prevDept, [e.target.name]: e.target.value }))
+                        }
                     />
+                    {errors.yearFounded && <div className="invalid-feedback">{errors.yearFounded}</div>}
                 </div>
 
                 <div className="mb-3">
@@ -109,10 +148,10 @@ function EditDepartment() {
                         id="deptImg"
                         name="deptImg"
                         accept="image/*"
-                        className="form-control"
+                        className={`form-control ${errors.deptImg ? "is-invalid" : ""}`}
                         onChange={(e) => handleImageUpload(e)}
-                        required
                     />
+                    {errors.deptImg && <div className="invalid-feedback">{errors.deptImg}</div>}
                 </div>
 
                 <div className="mb-3">
@@ -122,19 +161,20 @@ function EditDepartment() {
                     <textarea
                         type="text"
                         id="description"
-                        className="form-control"
+                        className={`form-control ${errors.description ? "is-invalid" : ""}`}
                         name="description"
                         placeholder="Enter department description"
-                        onChange={(e) => {
-                            e.persist();
-                            setDepartment((prevDepartment) => ({ ...prevDepartment, [e.target.name]: e.target.value }));
-                        }}
+                        value={department.description}
+                        onChange={(e) =>
+                            setDepartment((prevDept) => ({ ...prevDept, [e.target.name]: e.target.value }))
+                        }
                     />
+                    {errors.description && <div className="invalid-feedback">{errors.description}</div>}
                 </div>
 
                 <div className="text-center">
-                    <button type="button" className="btn btn-primary btn-block" onClick={adddepartment}>
-                        Add Department
+                    <button type="submit" className="btn btn-primary btn-block" onClick={editDept}>
+                        Save Changes
                     </button>
                 </div>
             </form>

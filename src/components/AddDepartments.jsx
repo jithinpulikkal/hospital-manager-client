@@ -71,7 +71,6 @@ function Adddepartment() {
 
             console.log("Response:", data);
 
-            // Handle success (if needed)
         } catch (error) {
             if (error.response) {
                 console.error("Server error:", error.response.data);
