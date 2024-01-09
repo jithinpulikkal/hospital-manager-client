@@ -110,9 +110,7 @@ function Employees() {
                                             <button
                                                 type="button"
                                                 className="btn btn-primary"
-                                                onClick={() => 
-                                                    navigate(`/editUser/${item._id}`)
-                                                }
+                                                onClick={() => navigate(`/editUser/${item._id}`)}
                                             >
                                                 Edit
                                             </button>

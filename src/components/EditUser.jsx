@@ -41,6 +41,8 @@ function EditUser() {
 
                 const userData = response.data;
                 setUser(userData);
+                console.log(user);
+                setSelectedDepartment(userData.deptName)
 
             } catch (error) {
                 console.error("Error fetching user data:", error);
@@ -59,7 +61,7 @@ function EditUser() {
         let isValid = true;
         const newErrors = {};
 
-        if (!user.employeeName.trim()) {
+        if (!user.employeeName) {
             newErrors.employeeName = "Username is required";
             isValid = false;
         }
@@ -85,7 +87,7 @@ function EditUser() {
             isValid = false;
         }
 
-        if (!user.description.trim()) {
+        if (!user.description) {
             newErrors.description = "Description is required";
             isValid = false;
         }
